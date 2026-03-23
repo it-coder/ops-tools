@@ -19,7 +19,7 @@ jobs:
       - name: Build
         working-directory: ./netTopology
         run: |
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o netTopology_linux_amd64 ./...
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o netTopology_linux_amd64 .
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
