@@ -1,0 +1,71 @@
+# 工作流名称
+name: Build Go Application (netTopology)
+
+# 触发条件：推送到main分支、对main分支的PR，或手动触发
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'netTopology/**' ] # 仅当netTopology目录文件变更时触发（可选优化）
+  pull_request:
+    branches: [ main ]
+    paths: [ 'netTopology/**' ]
+  workflow_dispatch: # 手动触发
+
+# 任务定义
+jobs:
+  build:
+    # 运行环境：Ubuntu最新版
+    runs-on: ubuntu-latest
+
+    # 多平台编译矩阵（可选，按需删减）
+    strategy:
+      matrix:
+        goos: [ linux, windows, darwin ] # 对应Linux、Windows、macOS
+        goarch: [ amd64, arm64 ]         # 对应x86_64、ARM64
+        # 排除不兼容的组合（如windows/arm64可保留，按需调整）
+        exclude:
+          - goos: windows
+            goarch: arm64
+
+    steps:
+      # 步骤1：拉取仓库代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 步骤2：配置Go环境
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21' # 指定Go版本（需和你的项目兼容）
+          cache: true # 开启Go模块缓存，加速依赖下载
+
+      # 步骤3：进入netTopology目录，下载依赖
+      - name: Download dependencies
+        working-directory: ./netTopology # 切换到目标目录
+        run: go mod download
+
+      # 步骤4：编译Go应用（适配多平台）
+      - name: Build application
+        working-directory: ./netTopology
+        env:
+          # 环境变量指定编译目标平台
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          # 禁用CGO（可选，提升跨平台兼容性）
+          CGO_ENABLED: 0
+        run: |
+          # 定义输出文件名（区分平台）
+          OUTPUT_NAME="netTopology_${{ matrix.goos }}_${{ matrix.goarch }}"
+          # Windows添加.exe后缀
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            OUTPUT_NAME="${OUTPUT_NAME}.exe"
+          fi
+          # 编译
+          go build -o "${OUTPUT_NAME}" ./...
+
+      # 步骤5：上传编译产物（方便下载）
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: netTopology_${{ matrix.goos }}_${{ matrix.goarch }}
+          path: ./netTopology/netTopology_${{ matrix.goos }}_${{ matrix.goarch }}*
