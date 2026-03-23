@@ -1,5 +1,5 @@
 # 工作流名称
-name: Build Go Application (netTopology)
+name: Build netTopology
 
 # 触发条件：推送到main分支、对main分支的PR，或手动触发
 on:
@@ -68,4 +68,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: netTopology_${{ matrix.goos }}_${{ matrix.goarch }}
-          path: ./netTopology/netTopology_${{ matrix.goos }}_${{ matrix.goarch }}*
+          path: ./netTopology/
